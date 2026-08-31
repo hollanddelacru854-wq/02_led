@@ -25,6 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+//#include <stdio.h>
+#include "bsp_key.h"
+#include "queue.h"
 
 /* USER CODE END Includes */
 
@@ -47,32 +50,45 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-osThreadId defaultTaskHandle;
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* USER CODE BEGIN PV */
+//*********************Thread_Func **********************//
+osThreadId_t key_TaskHandle;
+const osThreadAttr_t key_Task_attributes = {
+  .name = "key_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
+};
+//*********************Thread_Func **********************//
+
+//*********************Queue_Handler ********************//
+QueueHandle_t key_queue;
+
+//*********************Queue_Handler ********************//
+
+
+
+
+
+
+/* USER CODE END PV */
+
+
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+void KeyDefaultTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const * argument);
+void StartDefaultTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
-
-/* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
-
-/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
-static StaticTask_t xIdleTaskTCBBuffer;
-static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
-
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
-{
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
-  *ppxIdleTaskStackBuffer = &xIdleStack[0];
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-  /* place for user code */
-}
-/* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
   * @brief  FreeRTOS initialization
@@ -98,16 +114,22 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+//  key_queue = xQueueCreate( 10, sizeof( uint32_t ) );
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  key_TaskHandle = osThreadNew(KeyDefaultTask, NULL, &key_Task_attributes);
+  
   /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -118,12 +140,33 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
+void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  uint32_t received_value = 0;
   /* Infinite loop */
   for(;;)
   {
+//	printf("hello world\r\n");
+//    osDelay(100);
+//	printf("你好世界\r\n");
+//    osDelay(100);
+
+	  
+//	printf("StartDefaultTask\r\n");
+    if( key_queue != 0 )
+	{
+		// Receive a message on the created queue.  Block for 10 ticks if a
+		// message is not immediately available.
+		if( xQueueReceive( key_queue, &( received_value ), ( TickType_t ) 100 ) )
+		{
+			// pcRxedMessage now points to the struct AMessage variable posted
+			// by vATask.
+            printf("received queue value = [%d]" , received_value);
+            
+		}
+	}
+    
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
@@ -132,4 +175,56 @@ void StartDefaultTask(void const * argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
+void KeyDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN StartDefaultTask */
+  /* Infinite loop */
+  key_status_t  ket_ret          =          KEY_OK;
+  key_press_status_t key_statues = KEY_NOT_PRESSED;
+  key_queue = xQueueCreate( 10, sizeof( uint32_t ) );
+  uint32_t counter_tick = 0;
+  if (NULL == key_queue )
+  {
+      printf("key_queue created failed \r\n");
+  } 
+  else
+  {
+      printf("key_queue created successfully \r\n");
+  }
+  for(;;)
+  {
+//	printf("hello world");
+//    osDelay(10);
+//	printf("你好世界");
+    counter_tick++;
+    //printf("Hellow Key thread\r\n");
+    
+    ket_ret = key_scan(&key_statues);
+    
+    if( KEY_OK == ket_ret)
+    {
+        if ( KEY_PRESSED == key_statues )
+        {
+            printf("Key_Pressed\r\n");
+            if ( pdTRUE == xQueueSendToFront(key_queue,&counter_tick,0))
+            {
+                printf("send successfully\r\n");
+            }
+			else
+			{
+				printf("failed\r\n");
+			}
+        }
+    }
+    if( KEY_OK != ket_ret)
+    {
+        printf("Key_not_Pressed\r\n");
+    }        
+    osDelay(100);
+
+  }
+  /* USER CODE END StartDefaultTask */
+}
+
 /* USER CODE END Application */
+
