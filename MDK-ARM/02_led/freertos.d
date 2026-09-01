@@ -45,3 +45,4 @@
 02_led\freertos.o: ../BSP/key/inc/bsp_key.h
 02_led\freertos.o: D:\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
 02_led\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
+02_led\freertos.o: ..\BSP\led\inc\bsp_led.h
