@@ -34,6 +34,8 @@
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
+//#include "queue.h"
+//#include "cmsis_os.h"
 //******************************** Includes *********************************//
 
 //******************************** Defines **********************************//
@@ -56,6 +58,8 @@ typedef enum
   LED_ON                = 0,           /* Operation completed successfully.  */
   LED_OFF               = 1,           /* Operation completed successfully.  */
   LED_TOGGLE            = 2,           /* Operation completed successfully.  */
+  LED_BLINK_3_TIMES     = 3,           /* Operation completed successfully.  */
+  LED_INITED_VALUE      = 0xFF         /* Inited value                    .  */
 } led_operation_t;
 
 //******************************** Defines **********************************//

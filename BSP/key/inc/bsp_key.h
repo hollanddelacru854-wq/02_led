@@ -39,6 +39,7 @@
 //******************************** Defines **********************************//
 
 /*  函数返回状态枚举                    */
+//这玩意好像使用普通的数据类型（如uint32_t）就行，但是使用枚举更加直观一些
 typedef enum
 {
   KEY_OK                = 0,           /* Operation completed successfully.  */
@@ -49,13 +50,15 @@ typedef enum
   KEY_ERRORNOMEMORY     = 5,           /* Out of memory.                     */
   KEY_ERRORISR          = 6,           /* Not allowed in ISR context         */
   KEY_RESERVED          = 0x7FFFFFFF   /* Reserved                           */
-} key_status_t;
+} key_status_t;//按键是否被按下（为读取键值的函数提供返回值，判断按键是否超时）
 
 typedef enum
 {
   KEY_PRESSED           = 0,           /* Operation completed successfully.  */
   KEY_NOT_PRESSED       = 1,           /* Run-time error without case matched*/
-} key_press_status_t;
+  KEY_SHORT_PRESSED     = 2,           /* Operation                          */
+  KEY_LONG_PRESSED      = 3,           /* Operation                          */
+} key_press_status_t;//按键的按下状态（按没按下）
 
 //******************************** Defines **********************************//
 
@@ -63,6 +66,8 @@ typedef enum
 
 key_status_t key_scan(key_press_status_t * key_value);
 
+key_status_t key_scan_short_long_press(key_press_status_t *  key_value, 
+                                       uint32_t      short_press_time);
 
 //******************************** Declaring ********************************//
 

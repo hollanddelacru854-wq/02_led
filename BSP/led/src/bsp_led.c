@@ -26,6 +26,7 @@
 
 #include "bsp_led.h"
 
+
 /**
  * @brief Instantiates the bsp_led_handler_t target.
  * 
@@ -58,5 +59,18 @@ led_status_t led_on_off(led_operation_t led_operation)
         //1. Make the LED toggle
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     }
+	
+	if ( LED_BLINK_3_TIMES == led_operation )
+    {
+        //1. Make the LED blink 3 times
+        for(int i = 0; i < 6; i++)
+        {
+            HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+            //vTaskDelay(300);
+			HAL_Delay(300);
+        }
+    }
+
+    return ret;
 }
 

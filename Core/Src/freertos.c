@@ -151,34 +151,48 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  uint32_t         received_value =       0;
-  led_operation_t   led_ops_value =  LED_ON;
+	key_status_t ret_key_status      =             KEY_OK;
+    key_press_status_t key_value     =    KEY_NOT_PRESSED;
+    led_operation_t    led_ops_event =   LED_INITED_VALUE;
+    /**     Variables (in stack)            */
   /* Infinite loop */
   for(;;)
   {
-    printf("StartDefaultTask\r\n");
-    if( key_queue != 0 )
-	{
-		// Receive a message on the created queue.  Block for 10 ticks if a
-		// message is not immediately available.
-		if( xQueueReceive( key_queue, &( received_value ), ( TickType_t ) 100 ) )
-		{
-			// pcRxedMessage now points to the struct AMessage variable posted
-			// by vATask.
-            printf("received queue value = [%d]" , received_value);
-            
-            
-            // send the operation to LED
-            led_ops_value = LED_TOGGLE;
-            if ( pdTRUE == xQueueSendToFront(led_queue,&led_ops_value,0))
+    printf("APP task is living\r\n");
+    //1.判断长按和短按
+    ret_key_status = key_scan_short_long_press(&key_value, 
+                                                    1000);
+    if( KEY_OK == ret_key_status )
+    {
+        //1.1 判断为短按
+        if( KEY_SHORT_PRESSED == key_value )
+        {
+            printf("short pressed at [%d] tick \r\n", HAL_GetTick());
+            //3.若为短按，则发送对应的LED翻转的消息队列
+            led_ops_event  =  LED_TOGGLE;
+            if ( pdTRUE == xQueueSendToFront(led_queue,&led_ops_event,0))
             {
-                printf("led send successfully\r\n");
+                printf("LED_TOGGLE send successfully at [%d] tick \r\n", 
+                                                            HAL_GetTick());
             }
-            
-		}
-	}
-    
-    osDelay(1);
+            printf("after send the queue to led\r\n");
+        }
+
+        //1.2 判断为长按
+        if( KEY_LONG_PRESSED == key_value )
+        {
+            printf("long pressedat [%d] tick \r\n", HAL_GetTick());
+            //2.若为长按，则发送对应的闪烁3次消息队列
+            led_ops_event  =  LED_BLINK_3_TIMES;
+            if ( pdTRUE == xQueueSendToFront(led_queue,&led_ops_event,0))
+            {
+                printf("LED_BLINK_3_TIMES send successfully at [%d] tick \r\n", 
+                                                                HAL_GetTick());
+            }
+        }
+    }
+    HAL_Delay(100);
+    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -239,6 +253,7 @@ void LedDefaultTask(void *argument)
   /* Infinite loop */
   led_status_t      led_ret          =          LED_OK;
   led_operation_t led_value          =          LED_ON;
+
   led_queue = xQueueCreate( 10, sizeof( led_operation_t ) );
   if (NULL == led_queue )
   {
@@ -256,16 +271,23 @@ void LedDefaultTask(void *argument)
 	{
 		// Receive a message on the created queue.  Block for 10 ticks if a
 		// message is not immediately available.
-		if( xQueueReceive( led_queue, &( led_value ), ( TickType_t ) 100 ) )
+		if( pdTRUE == xQueueReceive(                led_queue, 
+                                               &( led_value ), 
+                                        ( TickType_t ) 100000 ) )
 		{
 			// pcRxedMessage now points to the struct AMessage variable posted
 			// by vATask.
-            printf("received led_queue value = [%d]" , led_value);
-            led_on_off(led_value);
+            printf("received led_queue value = [%d] at time [%d] \r\n " , 
+                                                                     led_value,
+                                                                HAL_GetTick());
+            led_ret = led_on_off(led_value);
+            if ( LED_OK == led_ret )
+            {
+                printf("led_on_off successfully at time [%d] \r\n", \
+                                                               HAL_GetTick() );
+            }
 		}
 	}
-    
-    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }
