@@ -36,7 +36,15 @@
 #include "stm32f4xx_hal_gpio.h"
 //******************************** Includes *********************************//
 
+#include "cmsis_os.h"
+
+#include "queue.h"
+
 //******************************** Defines **********************************//
+#define SHORT_PRESS_TIME    (500)              // Specify the short press time
+#define KEY_CALLBACK        void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+
+extern QueueHandle_t        inter_key_queue;
 
 /*  函数返回状态枚举                    */
 //这玩意好像使用普通的数据类型（如uint32_t）就行，但是使用枚举更加直观一些
@@ -59,6 +67,19 @@ typedef enum
   KEY_SHORT_PRESSED     = 2,           /* Operation                          */
   KEY_LONG_PRESSED      = 3,           /* Operation                          */
 } key_press_status_t;//按键的按下状态（按没按下）
+
+typedef enum
+{
+  RASING                = 0,           /* Operation completed successfully.  */ 
+  FAILING               = 1,           /* Operation failed                   */
+} key_trigger_edge_t;
+
+typedef struct
+{
+  key_trigger_edge_t    edge_type;     /* Operation completed successfully.  */
+  uint32_t           trigger_tick;     /* Operation completed successfully.  */
+} key_press_event_t;
+
 
 //******************************** Defines **********************************//
 

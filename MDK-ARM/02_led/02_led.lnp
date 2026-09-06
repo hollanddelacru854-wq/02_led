@@ -3,6 +3,7 @@
 "02_led\main.o"
 "02_led\gpio.o"
 "02_led\freertos.o"
+"02_led\tim.o"
 "02_led\usart.o"
 "02_led\stm32f4xx_it.o"
 "02_led\stm32f4xx_hal_msp.o"

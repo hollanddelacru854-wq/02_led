@@ -58,7 +58,9 @@ typedef enum
   LED_ON                = 0,           /* Operation completed successfully.  */
   LED_OFF               = 1,           /* Operation completed successfully.  */
   LED_TOGGLE            = 2,           /* Operation completed successfully.  */
-  LED_BLINK_3_TIMES     = 3,           /* Operation completed successfully.  */
+  LED_BLINK_1_TIMES     = 3,           /* Operation completed successfully.  */
+  LED_BLINK_3_TIMES     = 4,           /* Operation completed successfully.  */
+  LED_BLINK_10_TIMES    = 5,           /* Operation completed successfully.  */
   LED_INITED_VALUE      = 0xFF         /* Inited value                    .  */
 } led_operation_t;
 
@@ -68,6 +70,9 @@ typedef enum
 
 led_status_t led_on_off(led_operation_t led_operation);
 
+led_status_t led_on_off_timer_irq(led_operation_t led_operation);
+
+led_status_t led_callback_in_timer(void);
 
 //******************************** Declaring ********************************//
 

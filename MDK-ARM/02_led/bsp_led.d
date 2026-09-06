@@ -1,5 +1,5 @@
 02_led\bsp_led.o: ..\BSP\led\src\bsp_led.c
-02_led\bsp_led.o: ..\BSP\led\inc\bsp_led.h
+02_led\bsp_led.o: ../BSP/led/inc/bsp_led.h
 02_led\bsp_led.o: D:\Keil5\ARM\ARMCC\Bin\..\include\stdint.h
 02_led\bsp_led.o: D:\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
 02_led\bsp_led.o: ../Core/Inc/main.h

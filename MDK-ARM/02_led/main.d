@@ -42,6 +42,8 @@
 02_led\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 02_led\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 02_led\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
+02_led\main.o: ../Core/Inc/tim.h
 02_led\main.o: ../Core/Inc/usart.h
 02_led\main.o: ../Core/Inc/gpio.h
 02_led\main.o: D:\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
+02_led\main.o: ../BSP/led/inc/bsp_led.h

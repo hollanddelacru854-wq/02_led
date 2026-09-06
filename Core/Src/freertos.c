@@ -151,48 +151,62 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-	key_status_t ret_key_status      =             KEY_OK;
-    key_press_status_t key_value     =    KEY_NOT_PRESSED;
-    led_operation_t    led_ops_event =   LED_INITED_VALUE;
-    /**     Variables (in stack)            */
-  /* Infinite loop */
-  for(;;)
-  {
-    printf("APP task is living\r\n");
-    //1.判断长按和短按
-    ret_key_status = key_scan_short_long_press(&key_value, 
-                                                    1000);
-    if( KEY_OK == ret_key_status )
+	osDelay(500);
+	key_press_status_t key_result = KEY_SHORT_PRESSED;
+    for(;;)
     {
-        //1.1 判断为短按
-        if( KEY_SHORT_PRESSED == key_value )
+        printf("APP task is living\r\n");
+        
+        if ( pdTRUE == xQueueReceive(        key_queue,
+                                           &key_result,
+                                                    0) )
         {
-            printf("short pressed at [%d] tick \r\n", HAL_GetTick());
-            //3.若为短按，则发送对应的LED翻转的消息队列
-            led_ops_event  =  LED_TOGGLE;
-            if ( pdTRUE == xQueueSendToFront(led_queue,&led_ops_event,0))
+            printf( "key_result receive successfully"
+                    " at [%d] tick \r\n", 
+                                    HAL_GetTick());
+            
+            //Send the message to the led
+            if( KEY_SHORT_PRESSED == key_result)
             {
-                printf("LED_TOGGLE send successfully at [%d] tick \r\n", 
-                                                            HAL_GetTick());
+                led_operation_t led_value          =       LED_BLINK_1_TIMES;
+
+                if ( NULL == led_queue )
+                {
+                    printf( "led_queue not created"
+                            " at [%d] tick \r\n", 
+                                          HAL_GetTick());
+                }
+                if ( pdTRUE == xQueueSendToFront(          led_queue,
+                                                      &( led_value ),
+                                                    ( TickType_t )0))
+                {
+                    printf( "led_queue send led_value successfully"
+                            " at [%d] tick \r\n", 
+                                          HAL_GetTick());
+                }
             }
-            printf("after send the queue to led\r\n");
+            if( KEY_LONG_PRESSED == key_result)
+            {
+                led_operation_t led_value          =       LED_BLINK_10_TIMES;
+
+                if ( NULL == led_queue )
+                {
+                    printf( "led_queue not created"
+                            " at [%d] tick \r\n", 
+                                          HAL_GetTick());
+                }
+                if ( pdTRUE == xQueueSendToFront(          led_queue,
+                                                      &( led_value ),
+                                                    ( TickType_t )0))
+                {
+                    printf( "led_queue send led_value successfully"
+                            " at [%d] tick \r\n", 
+                                          HAL_GetTick());
+                }
+            }
         }
 
-        //1.2 判断为长按
-        if( KEY_LONG_PRESSED == key_value )
-        {
-            printf("long pressedat [%d] tick \r\n", HAL_GetTick());
-            //2.若为长按，则发送对应的闪烁3次消息队列
-            led_ops_event  =  LED_BLINK_3_TIMES;
-            if ( pdTRUE == xQueueSendToFront(led_queue,&led_ops_event,0))
-            {
-                printf("LED_BLINK_3_TIMES send successfully at [%d] tick \r\n", 
-                                                                HAL_GetTick());
-            }
-        }
-    }
-    HAL_Delay(100);
-    osDelay(100);
+      osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -204,40 +218,136 @@ void KeyDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-  key_status_t  ket_ret          =          KEY_OK;
-  key_press_status_t key_statues = KEY_NOT_PRESSED;
-  key_queue = xQueueCreate( 10, sizeof( uint32_t ) );
-  uint32_t counter_tick = 0;
-  if (NULL == key_queue )
-  {
-      printf("key_queue created failed \r\n");
-  } 
-  else
-  {
-      printf("key_queue created successfully \r\n");
-  }
-  for(;;)
-  {
-    counter_tick++;
-    //printf("Hellow Key thread\r\n");
-    
-    ket_ret = key_scan(&key_statues);
-    
-    if( KEY_OK == ket_ret)
+  /**     Variables (in task stack)                              **/
+    uint32_t           event_index         =                        0;
+    uint32_t           frist_trigger_tick  =                        0;
+    uint32_t           short_press_time    =         SHORT_PRESS_TIME;
+    key_press_event_t  key_press_event     =     
+    { 
+     .edge_type = RASING,
+     .trigger_tick = 0
+    };
+    /**     Variables (in task stack)                              **/
+
+    /**     Variables (in OS heap )                                **/
+    key_queue       = xQueueCreate( 10, sizeof( key_press_status_t ));
+    inter_key_queue = xQueueCreate( 10, sizeof( key_press_event_t  ));
+    /**     Variables (in OS heap )                                **/
+
+    // check if the queue has been created successfully
+    if (NULL == key_queue     || 
+        NULL == inter_key_queue)
     {
-        if ( KEY_PRESSED == key_statues )
-        {
-            printf("Key_Pressed\r\n");
-            if ( pdTRUE == xQueueSendToFront(key_queue,&counter_tick,0))
-            {
-                printf("send successfully\r\n");
-            }
-        }
+        printf("key_queue created failed \r\n");
+        return;
+    } 
+    else
+    {
+        printf("key_queue created successfully \r\n");
     }
-    if( KEY_OK != ket_ret)
+
+    for(;;)
     {
-        printf("Key_not_Pressed\r\n");
-    }        
+        printf( "key_task_func running "
+                " at [%d] tick \r\n",  HAL_GetTick());
+        //1. check if there is new data about the key press in the queue
+        if( pdTRUE == xQueueReceive(           inter_key_queue,  
+                                          &( key_press_event ), 
+                                           ( TickType_t ) 0 ) )
+        {
+            printf("key_press_event.trigger_tick = [%d]\r\n",
+                                 key_press_event.trigger_tick);
+            printf( "inter_key_queue receive key event "
+                    " at [%d] tick \r\n",  HAL_GetTick());
+            //1.1 if there is the new data about the key, 
+            //then update it in state machine
+            if( RASING  == key_press_event.edge_type &&
+                0       ==                event_index )
+            {
+                printf("key RASING fetched! error!");
+            }
+            if( FAILING == key_press_event.edge_type &&
+                0       ==                event_index)
+            {
+                printf("key FAILING fetched! first\r\n");
+                //chang the index for chaging the state machine
+                event_index += 1;     
+
+                //Mark the first tick when event coming
+                frist_trigger_tick  = key_press_event.trigger_tick;
+            }
+            if( RASING  == key_press_event.edge_type &&
+                1       ==                event_index )
+            {
+                printf("key RASING after the falling ");
+                //1.1.1 if the interval in new key event between two key 
+                // is less than 10ms, 
+                if ( key_press_event.trigger_tick - frist_trigger_tick < 10)
+                {
+                    // 1.1.1.1 the new key press event is not valid
+                    printf( "Invalid key fetched "
+                            " at [%d] tick \r\n",  HAL_GetTick());
+                    continue;
+                }
+
+                //1.1.2 if the interval in new key event between two key
+                // is more than 10ms, then the key press event is valid 
+                // 1.1.2.1 the new key press event is valid
+                // 1.1.2.1.1 if the interval is less than the short_press time
+                // then it should be short press.
+                if ( (key_press_event.trigger_tick - frist_trigger_tick) \
+                                                           < short_press_time )
+                {
+                    // 1.1.2.1.1.1 send the short press message to key_queue
+                    key_press_status_t key_result = KEY_SHORT_PRESSED;
+
+                    if ( pdTRUE == xQueueSendToFront(        key_queue,
+                                                           &key_result,
+                                                           0))
+                    {
+                        printf( "key_result send short press successfully"
+                                " at [%d] tick \r\n", 
+                                               HAL_GetTick());
+                        event_index = 0;
+                    }
+                    else
+                    {
+                        printf("key_result send short press failed" 
+                               "at [%d] tick \r\n", 
+                                         HAL_GetTick());
+                    }
+                }
+                
+                
+                // 1.1.2.1.2 if the interval is more than the short_press time
+                // then it should be long press.
+                if ( (key_press_event.trigger_tick - frist_trigger_tick) \
+                                                           > short_press_time )
+                {
+                    // 1.1.2.1.2.1 send the short press message to key_queue
+                    key_press_status_t key_result = KEY_LONG_PRESSED;
+
+                    if ( pdTRUE == xQueueSendToFront(        key_queue,
+                                                           &key_result,
+                                                           0))
+                    {
+                        printf( "key_result send long press successfully"
+                                " at [%d] tick \r\n", 
+                                               HAL_GetTick());
+                        event_index = 0;
+                    }
+                    else
+                    {
+                        printf("key_result send long press failed" 
+                               "at [%d] tick \r\n", 
+                                         HAL_GetTick());
+                    }
+                }
+                
+            }
+                
+
+        }   
     osDelay(100);
 	
   }
@@ -273,14 +383,14 @@ void LedDefaultTask(void *argument)
 		// message is not immediately available.
 		if( pdTRUE == xQueueReceive(                led_queue, 
                                                &( led_value ), 
-                                        ( TickType_t ) 100000 ) )
+                                        ( TickType_t ) 0 ) )
 		{
 			// pcRxedMessage now points to the struct AMessage variable posted
 			// by vATask.
             printf("received led_queue value = [%d] at time [%d] \r\n " , 
                                                                      led_value,
                                                                 HAL_GetTick());
-            led_ret = led_on_off(led_value);
+            led_ret = led_on_off_timer_irq(led_value);
             if ( LED_OK == led_ret )
             {
                 printf("led_on_off successfully at time [%d] \r\n", \
@@ -288,6 +398,7 @@ void LedDefaultTask(void *argument)
             }
 		}
 	}
+	osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }

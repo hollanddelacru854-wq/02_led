@@ -33,3 +33,15 @@
 02_led\bsp_key.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 02_led\bsp_key.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 02_led\bsp_key.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+02_led\bsp_key.o: ../Core/Inc/FreeRTOSConfig.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/portmacro.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
+02_led\bsp_key.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
